@@ -2642,7 +2642,7 @@ function setupWasps() {
   const spawnInterval = setInterval(() => {
     if (timeLeft <= 0) return;
     spawnWasp();
-  }, 550);
+  }, 900);
   state._waspTimers.push(spawnInterval);
 
   function spawnWasp() {
@@ -2660,7 +2660,7 @@ function setupWasps() {
         alive = false; missed++; combo = 0;
         updateCombo(); w.remove();
       }
-    }, 1800);
+    }, 2500);
 
     const killWasp = (e) => {
       if (e) e.preventDefault();
@@ -2705,10 +2705,10 @@ function setupWasps() {
         const totalDmg = Math.min(15, missed * 2);
         if (totalDmg > 0) hpChange(-totalDmg, `놓친 CS ${missed}건`);
         if (state.gameOver) return;
-        if (handled >= 15) {
+        if (handled >= 12) {
           setTimeout(() => hpChange(+12, '"CS 감각 있네요" 칭찬 🌟'), 1000);
           setTimeout(() => { if (!state.gameOver) screenDay5Remote(); }, 2500);
-        } else if (handled >= 10) {
+        } else if (handled >= 7) {
           setTimeout(() => hpChange(+5, '그래도 많이 쳐냈다'), 1000);
           setTimeout(() => { if (!state.gameOver) screenDay5Remote(); }, 2500);
         } else {
@@ -3153,33 +3153,40 @@ function generateSharePreview() {
 }
 
 function friendShare() {
-  const gameUrl = window.location.href.split('#')[0].split('?')[0];
+  const gameUrl = 'https://startup-game-g2di.vercel.app/';
+  const ending = decideEnding();
+  const grade = ending === 'founder' ? 'SS+' : state.hp >= 70 ? 'S' : state.hp >= 50 ? 'A' : state.hp >= 30 ? 'B' : state.hp >= 10 ? 'C' : 'F';
+  const endingName = {
+    burnout: '번아웃 💀', quit: '이직 ✈️',
+    survive: '존버중 😤', exit: '엑싯 💰', founder: '창업 🏛️',
+  }[ending] || '???';
 
-  // Try Web Share API first (mobile - opens native share sheet)
+  // 결과 + 링크 함께 포함된 메시지
+  const shareText = `🚀 스타트업 생존기: 직장인편\n\n👤 직군: ${state.job?.name || '?'}\n❤️ HP: ${state.hp}/100\n🏆 등급: ${grade}\n🎬 엔딩: ${endingName}\n\n너도 한번 버텨봐 👇\n${gameUrl}`;
+
+  // Try Web Share API first (mobile - opens native share sheet with kakao/imessage etc)
   if (navigator.share) {
     navigator.share({
       title: '스타트업 생존기: 직장인편',
-      text: '너도 한번 스타트업에서 버텨봐 🚀',
-      url: gameUrl,
+      text: shareText,
     }).then(() => {
       toast('공유 완료! ✨', 'heal');
     }).catch((err) => {
       if (err.name === 'AbortError') return; // user cancelled
-      // Fallback to copy
-      copyUrlOnly(gameUrl);
+      copyResultAndUrl(shareText);
     });
     return;
   }
 
-  // Desktop: just copy URL
-  copyUrlOnly(gameUrl);
+  // Desktop: copy text with result + URL together
+  copyResultAndUrl(shareText);
 }
 
-function copyUrlOnly(gameUrl) {
-  copyToClipboard(gameUrl).then(() => {
-    toast('게임 링크 복사됨! 📋\n친구에게 붙여넣기 해보세요', 'heal');
+function copyResultAndUrl(text) {
+  copyToClipboard(text).then(() => {
+    toast('결과 + 링크 복사됨! 📋\n카톡에 붙여넣기 해보세요', 'heal');
   }).catch(() => {
-    toast('복사 실패 😭\n주소창의 URL을 직접 복사해주세요', 'dmg');
+    toast('복사 실패 😭\n직접 스크린샷 찍어주세요', 'dmg');
   });
 }
 
